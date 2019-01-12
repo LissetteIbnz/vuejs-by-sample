@@ -2,16 +2,17 @@ var path = require('path');
 var webpack = require('webpack');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var MiniCssExtractPlugin = require('mini-css-extract-plugin');
-var { CheckerPlugin } = require('awesome-typescript-loader');
-
+var ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+var VueLoaderPlugin = require('vue-loader/lib/plugin');
+ 
 var basePath = __dirname;
 
 module.exports = {
   context: path.join(basePath, 'src'),
   resolve: {
-    extensions: ['.js', '.ts'],
+    extensions: ['.js', '.ts', '.vue'],
     alias: {
-      vue: 'vue/dist/vue.js',
+      'vue': 'vue/dist/vue.esm.js',
     },
   },
   mode: 'development',
@@ -31,22 +32,29 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /\.vue$/,
+        exclude: /node_modules/,
+        loader: 'vue-loader',
+      },      
+      {
         test: /\.ts$/,
         exclude: /node_modules/,
         use: {
-          loader: 'awesome-typescript-loader',
+          loader: 'ts-loader',
           options: {
-            useBabel: true,
-            useCache: true,
+            appendTsSuffixTo: [/\.vue$/],
+            transpileOnly: true,
           },
         },
       },
       {
         test: /\.css$/,
         use: [
-          MiniCssExtractPlugin.loader,
+          process.env.NODE_ENV !== 'production'
+            ? 'vue-style-loader'
+            : MiniCssExtractPlugin.loader,
           'css-loader',
-        ],
+        ]
       },
       // Loading glyphicons => https://github.com/gowravshekar/bootstrap-webpack
       // Using here url-loader and file-loader
@@ -70,6 +78,7 @@ module.exports = {
   },
   devtool: 'inline-source-map',
   plugins: [
+    new VueLoaderPlugin(),
     //Generate index.html in /dist => https://github.com/ampedandwired/html-webpack-plugin
     new HtmlWebpackPlugin({
       filename: 'index.html', //Name of file in ./dist/
@@ -80,6 +89,21 @@ module.exports = {
     new MiniCssExtractPlugin({
       filename: '[name].css',
     }),
-    new CheckerPlugin(),
+    new ForkTsCheckerWebpackPlugin({
+      tsconfig: path.join(__dirname, './tsconfig.json'),
+      vue: true,
+    }),
   ],
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        vendor: {
+          test: /node_modules/,
+          name: 'vendor',
+          chunks: 'initial',
+          enforce: true
+        },
+      },
+    },
+  },
 };

@@ -12,9 +12,9 @@ Summary steps:
 - Prerequisites: Install Node.js
 - Initialize **package.json** (with `npm init`)
 - Install:
-    - Webpack and webpack-dev-server.
-    - TypeScript.
-    - Bootstrap.
+  - Webpack and webpack-dev-server.
+  - TypeScript.
+  - Bootstrap.
 - Setup **webpack.config.js**
 - Create a test js file.
 - Create a simple HTML file.
@@ -41,6 +41,7 @@ Once you have successfully fullfilled them a **package.json** file we will gener
  ```
  npm install webpack webpack-cli --save-dev
  ```
+
 - Install **webpack-dev-server** locally, as a development dependency (the reason to install it locally instead of globally is for it to be easy to setup, e.g. It can be launched on a clean machine without having to install anything globally but nodejs).
 
  ```
@@ -49,9 +50,10 @@ Once you have successfully fullfilled them a **package.json** file we will gener
 
 - Let's install a list of plugins and loaders that will add powers to our webpack configuration (handling <abbr title="Cascading Style Sheets">CSS</abbr>, TypeScript...).
 
- ```bash
- npm install awesome-typescript-loader css-loader file-loader html-webpack-plugin mini-css-extract-plugin url-loader  --save-dev
  ```
+ npm install ts-loader fork-ts-checker-webpack-plugin css-loader file-loader html-webpack-plugin mini-css-extract-plugin url-loader  --save-dev
+ ```
+
 - Let's add two commands to our **package.json** to build and start.
 
 ### ./package.json
@@ -84,10 +86,7 @@ Once you have successfully fullfilled them a **package.json** file we will gener
     "noLib": false,
     "suppressImplicitAnyIndexErrors": true
   },
-  "compileOnSave": false,
-  "exclude": [
-    "node_modules"
-  ]
+  "compileOnSave": false
 }
 
  ```
@@ -103,7 +102,7 @@ TypeScript transpile to ES6 files and Babel transpile to ES5 files
 ```
 
 ```
-npm install babel-core babel-preset-env --save-dev
+npm install @babel/cli @babel/core @babel/preset-env --save-dev
 
 ```
 
@@ -113,17 +112,16 @@ npm install babel-core babel-preset-env --save-dev
 ```diff
 {
   "presets": [
-    "env"
+    [
+      "@babel/preset-env",
+      {
+        "useBuiltIns": "entry"
+      }
+    ]
   ]
 }
 
 ```
-
-- Let's install bootstrap:
-
- ```
- npm install bootstrap@3 --save
- ```
 
 - Now, our **package.json** file should look something like:
 
@@ -154,21 +152,20 @@ npm install babel-core babel-preset-env --save-dev
   },
   "homepage": "https://github.com/Lemoncode/vuejs-by-sample#readme",
   "devDependencies": {
-    "awesome-typescript-loader": "^5.0.0",
-    "babel-core": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "css-loader": "^0.28.11",
-    "file-loader": "^1.1.11",
+    "@babel/cli": "^7.1.5",
+    "@babel/core": "^7.1.6",
+    "@babel/preset-env": "^7.1.6",
+    "css-loader": "^1.0.1",
+    "file-loader": "^2.0.0",
+    "fork-ts-checker-webpack-plugin": "^0.5.0",
     "html-webpack-plugin": "^3.2.0",
-    "mini-css-extract-plugin": "^0.4.0",
-    "typescript": "^2.8.3",
-    "url-loader": "^1.0.1",
-    "webpack": "^4.6.0",
-    "webpack-cli": "^2.0.15",
-    "webpack-dev-server": "3.1.0"
-  },
-  "dependencies": {
-    "bootstrap": "^3.3.7"
+    "mini-css-extract-plugin": "^0.4.5",
+    "ts-loader": "^5.3.1",
+    "typescript": "^3.2.1",
+    "url-loader": "^1.1.2",
+    "webpack": "^4.26.1",
+    "webpack-cli": "^3.1.2",
+    "webpack-dev-server": "^3.1.10"
   }
 }
 
@@ -183,6 +180,7 @@ mkdir src
 - Let's create a basic **main.ts** file (under **src** folder):
 
 ### ./src/main.ts
+
 ```javascript
 document.write("Hello from main.ts !");
 
@@ -191,6 +189,7 @@ document.write("Hello from main.ts !");
 - Let's create a basic **index.html** file (under **src** folder):
 
 ### ./src/index.html
+
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -201,9 +200,7 @@ document.write("Hello from main.ts !");
     <title>Vue.js by sample</title>
   </head>
   <body>
-    <div class="well">
-      <h1>Sample app</h1>
-    </div>
+    <h1>Sample app</h1>
   </body>
 </html>
 
@@ -213,18 +210,18 @@ document.write("Hello from main.ts !");
  include plumbing for:
  - Launching a web dev server.
  - Transpiling from TypeScript to JavaScript.
- - Setting up Twitter Bootstrap (including fonts, etc...).
  - Generating the build under a **dist** folder.
 
 ### ./webpack.config.js
- ```javascript
-var path = require('path');
-var webpack = require('webpack');
-var HtmlWebpackPlugin = require('html-webpack-plugin');
-var MiniCssExtractPlugin = require('mini-css-extract-plugin');
-var { CheckerPlugin } = require('awesome-typescript-loader');
 
-var basePath = __dirname;
+```javascript
+const path = require('path');
+const webpack = require('webpack');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+
+const basePath = __dirname;
 
 module.exports = {
   context: path.join(basePath, 'src'),
@@ -234,9 +231,6 @@ module.exports = {
   mode: 'development',
   entry: {
     app: './main.ts',
-    vendorStyles: [
-      '../node_modules/bootstrap/dist/css/bootstrap.css',
-    ],
   },
   output: {
     path: path.join(basePath, 'dist'),
@@ -248,10 +242,9 @@ module.exports = {
         test: /\.ts$/,
         exclude: /node_modules/,
         use: {
-          loader: 'awesome-typescript-loader',
+          loader: 'ts-loader',
           options: {
-            useBabel: true,
-            useCache: true,
+            transpileOnly: true,
           },
         },
       },
@@ -262,8 +255,6 @@ module.exports = {
           'css-loader',
         ],
       },
-      // Loading glyphicons => https://github.com/gowravshekar/bootstrap-webpack
-      // Using here url-loader and file-loader
       {
         test: /\.(woff|woff2)(\?v=\d+\.\d+\.\d+)?$/,
         loader: 'url-loader?limit=10000&mimetype=application/font-woff'
@@ -284,17 +275,18 @@ module.exports = {
   },
   devtool: 'inline-source-map',
   plugins: [
-    //Generate index.html in /dist => https://github.com/ampedandwired/html-webpack-plugin
     new HtmlWebpackPlugin({
-      filename: 'index.html', //Name of file in ./dist/
-      template: 'index.html', //Name of template in ./src
+      filename: 'index.html',
+      template: 'index.html',
       hash: true,
     }),
     new webpack.HashedModuleIdsPlugin(),
     new MiniCssExtractPlugin({
       filename: '[name].css',
     }),
-    new CheckerPlugin(),
+    new ForkTsCheckerWebpackPlugin({
+      tsconfig: path.join(__dirname, './tsconfig.json'),
+    }),
   ],
 };
 

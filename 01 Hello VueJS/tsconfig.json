@@ -10,8 +10,5 @@
     "suppressImplicitAnyIndexErrors": true,
     "strict": true
   },
-  "compileOnSave": false,
-  "exclude": [
-    "node_modules"
-  ]
+  "compileOnSave": false
 }
